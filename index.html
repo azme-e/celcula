@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Cute buat Adhe</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+            transition: background 0.8s ease;
+        }
+
+        /* Tema Default (Siang/Cute) */
+        body.day-mode {
+            background: linear-gradient(135deg, #fdf3f5, #f8dce2, #eef7f7, #f7f2f5);
+            background-size: 400% 400%;
+            animation: gradientBG 10s ease infinite;
+        }
+
+        /* Tema Malam Sempurna */
+        body.night-mode {
+            background: linear-gradient(to bottom, #090a0f, #1b2735, #1e293b);
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Background Emojis */
+        .flying-bg-emoji {
+            position: absolute;
+            font-size: 24px;
+            pointer-events: none;
+            opacity: 0.5;
+            animation: floatUp 8s linear infinite;
+            z-index: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(110vh) rotate(0deg) scale(0.8); opacity: 0; }
+            20% { opacity: 0.7; }
+            80% { opacity: 0.7; }
+            100% { transform: translateY(-20vh) rotate(360deg) scale(1.2); opacity: 0; }
+        }
+
+        .card-container {
+            width: 360px;
+            height: 570px;
+            perspective: 1000px;
+            z-index: 10;
+            position: relative;
+        }
+
+        /* Api Cahaya Belakang */
+        .magic-flame {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px;
+            height: 80px;
+            background: radial-gradient(ellipse, rgba(255, 105, 180, 0.5) 0%, rgba(255, 182, 193, 0) 70%);
+            filter: blur(15px);
+            border-radius: 50%;
+            animation: flamePulse 2s infinite alternate;
+            z-index: -1;
+            transition: background 0.8s ease;
+        }
+
+        body.night-mode .magic-flame {
+            background: radial-gradient(ellipse, rgba(56, 189, 248, 0.6) 0%, rgba(2, 132, 199, 0) 70%);
+            animation: flamePulseNight 2s infinite alternate;
+        }
+
+        @keyframes flamePulse {
+            0% { transform: translateX(-50%) scale(0.9); opacity: 0.5; }
+            100% { transform: translateX(-50%) scale(1.1); opacity: 0.8; }
+        }
+        @keyframes flamePulseNight {
+            0% { transform: translateX(-50%) scale(0.9); opacity: 0.5; }
+            100% { transform: translateX(-50%) scale(1.1); opacity: 1; box-shadow: 0 -10px 40px rgba(56, 189, 248, 0.5); }
+        }
+        
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .calculator-front, .message-back {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            backface-visibility: hidden;
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(230, 160, 170, 0.2);
+            box-sizing: border-box;
+            padding: 25px;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+        
+        /* Desain Glassmorphism Kalkulator */
+        .calculator-front {
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Mainan Lempar */
+        .bouncing-ball-container {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            z-index: 99999;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+        .bouncing-ball-container:active { cursor: grabbing; }
+        .spinning-ball-inner {
+            font-size: 32px;
+            width: 100%; height: 100%;
+            animation: spin 3s linear infinite;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+            pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .top-buttons {
+            position: absolute;
+            top: 15px; right: 15px;
+            display: flex; gap: 8px; z-index: 12;
+        }
+
+        .btn-top {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            width: 35px; height: 35px;
+            font-size: 16px; cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: flex; justify-content: center; align-items: center;
+        }
+        .btn-top:hover { transform: scale(1.15); background: rgba(255, 255, 255, 0.9); }
+
+        .moving-emojis-container {
+            height: 35px; width: calc(100% - 60px);
+            margin-left: 10px; overflow: hidden;
+            position: relative; margin-bottom: 10px; margin-top: -5px;
+        }
+
+        .moving-emojis {
+            display: flex; position: absolute;
+            white-space: nowrap; animation: marquee 10s linear infinite;
+            font-size: 22px; align-items: center; height: 100%;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        
+        #display {
+            width: 100%; height: 80px;
+            font-size: 38px; text-align: right;
+            margin-bottom: 20px; padding: 10px 20px;
+            box-sizing: border-box;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            background-color: rgba(255, 255, 255, 0.6);
+            color: #e6395b; border-radius: 20px; font-weight: 800;
+            box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.03);
+            font-family: 'Courier New', Courier, monospace;
+            transition: all 0.5s ease;
+        }
+        
+        .buttons {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 12px; flex-grow: 1;
+        }
+        
+        button {
+            padding: 15px 5px; font-size: 22px; font-weight: 700;
+            cursor: pointer; border-radius: 20px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.3));
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 4px 4px 10px rgba(0,0,0,0.05), -4px -4px 10px rgba(255,255,255,0.8), inset 1px 1px 2px rgba(255,255,255,0.5);
+            color: #4a4e69; backdrop-filter: blur(5px);
+        }
+        
+        button:hover { 
+            transform: translateY(-4px) scale(1.05); 
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.5));
+            box-shadow: 6px 6px 15px rgba(240, 160, 175, 0.4), -4px -4px 10px rgba(255,255,255,0.9);
+        }
+        button:active { 
+            transform: translateY(2px) scale(0.95); 
+            box-shadow: inset 4px 4px 10px rgba(0,0,0,0.05), inset -4px -4px 10px rgba(255,255,255,0.6);
+        }
+        
+        .btn-clear { background: linear-gradient(135deg, #ff9a9e, #fecfef); color: white; border: none; }
+        .btn-operator { background: linear-gradient(135deg, rgba(161, 196, 253, 0.5), rgba(161, 196, 253, 0.2)); color: #00509d; }
+        .btn-equal { background: linear-gradient(135deg, #f6d365, #fda085); color: #fff; grid-column: span 2; border: none;}
+
+        /* Animasi Angka Terbang */
+        @keyframes flyUpFade {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -180px) scale(1.8); opacity: 0; }
+        }
+        .flying-text {
+            position: fixed; color: #e6395b; font-size: 26px; font-weight: 900;
+            pointer-events: none; z-index: 99999; text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            animation: flyUpFade 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        /* CSS Night Mode untuk Elemen Dalam */
+        body.night-mode .calculator-front { background: rgba(15, 23, 42, 0.65); border: 2px solid rgba(56, 189, 248, 0.3); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); }
+        body.night-mode .btn-top { background: rgba(30, 41, 59, 0.8); border-color: rgba(56, 189, 248, 0.4); color: #bae6fd; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        body.night-mode #display { background-color: rgba(15, 23, 42, 0.8); color: #38bdf8; border-color: #0369a1; box-shadow: inset 0 4px 10px rgba(0,0,0,0.6); }
+        body.night-mode button { background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(56, 189, 248, 0.2); color: #e2e8f0; }
+        body.night-mode .btn-operator { background: linear-gradient(135deg, rgba(2, 132, 199, 0.5), rgba(2, 132, 199, 0.2)); color: #7dd3fc; }
+        body.night-mode .btn-clear { background: linear-gradient(135deg, #be123c, #e11d48); color: white; }
+        body.night-mode .btn-equal { background: linear-gradient(135deg, #0284c7, #0369a1); }
+        body.night-mode .flying-text { color: #38bdf8; }
+
+        .message-back {
+            transform: rotateY(180deg); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center; border: 3px solid white;
+        }
+
+        .theme-funny { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); color: #334155; border-color: #a855f7; }
+        .theme-funny h2 { color: #6b21a8; }
+        .theme-funny .message-content { background: rgba(255,255,255,0.3); }
+
+        .avatar { font-size: 50px; margin-bottom: 10px; animation: bounce 2s infinite; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1)); }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        .message-back h2 { margin: 0 0 15px 0; font-size: 24px; font-weight: 800;}
+        
+        .message-content {
+            font-size: 15px; line-height: 1.6; margin-bottom: 20px;
+            max-height: 300px; overflow-y: auto; width: 100%;
+            box-sizing: border-box; padding: 15px; border-radius: 20px;
+            backdrop-filter: blur(5px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .custom-btn-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .custom-btn-link:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 6px 15px rgba(59, 130, 246, 0.6);
+        }
+        
+        .btn-back {
+            background: linear-gradient(135deg, #ff9a9e, #fecfef); color: white;
+            font-size: 16px; font-weight: bold; padding: 12px 30px;
+            border-radius: 25px; box-shadow: 0 4px 15px rgba(255, 154, 158, 0.4);
+            border: none; cursor: pointer; margin-top: auto; transition: all 0.3s;
+        }
+        
+        .btn-back:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(255, 154, 158, 0.6); }
+
+        /* Style untuk tombol Kardus */
+        .game-box-btn {
+            background: linear-gradient(135deg, #fff, #f0f0f0);
+            border: 2px solid #ccc; font-size: 30px; padding: 10px;
+            border-radius: 15px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .game-box-btn:active { transform: scale(0.95); }
+
+    </style>
+</head>
+<body class="day-mode" id="bodyBg">
+
+<audio id="audioGame" loop preload="auto">
+    <source src="sound1.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="audioError" preload="auto">
+    <source src="error.mp3" type="audio/mpeg">
+</audio>
+
+<div id="bouncingBall" class="bouncing-ball-container" style="top: 50px; left: 50px;">
+    <div class="spinning-ball-inner">⚽</div>
+</div>
+<div id="bouncingDoll1" class="bouncing-ball-container" style="top: 120px; left: 80px;">
+    <div class="spinning-ball-inner">🧸</div>
+</div>
+<div id="bouncingDoll2" class="bouncing-ball-container" style="top: 180px; left: 40px;">
+    <div class="spinning-ball-inner">🐰</div>
+</div>
+
+<div class="card-container">
+    <div class="magic-flame"></div> 
+    <div class="card-inner" id="cardInner">
+        
+        <div class="calculator-front">
+            <div class="top-buttons">
+                <button class="btn-top" onclick="toggleDayNight()" title="Mode Siang/Malam">🌓</button>
+            </div>
+            
+            <div class="moving-emojis-container">
+                <div class="moving-emojis">
+                    🎀 ✨ 🌸 💖 🦋 🌷 🍭 🍓 🧸 🎀 ✨ 🌸 💖 🦋 🌷 🍭 🍓 🧸
+                </div>
+            </div>
+
+            <input type="text" id="display" readonly placeholder="💖 0">
+            
+            <div class="buttons">
+                <button onclick="clearDisplay()" class="btn-clear">C</button>
+                <button onclick="appendValue('/')" class="btn-operator">÷</button>
+                <button onclick="appendValue('*')" class="btn-operator">×</button>
+                <button onclick="appendValue('-')" class="btn-operator">−</button>
+                
+                <button onclick="appendValue('7')" class="btn-num">7</button>
+                <button onclick="appendValue('8')" class="btn-num">8</button>
+                <button onclick="appendValue('9')" class="btn-num">9</button>
+                <button onclick="appendValue('+')" class="btn-operator">+</button>
+                
+                <button onclick="appendValue('4')" class="btn-num">4</button>
+                <button onclick="appendValue('5')" class="btn-num">5</button>
+                <button onclick="appendValue('6')" class="btn-num">6</button>
+                <button onclick="deleteLast()" class="btn-clear">⌫</button>
+                
+                <button onclick="appendValue('1')" class="btn-num">1</button>
+                <button onclick="appendValue('2')" class="btn-num">2</button>
+                <button onclick="appendValue('3')" class="btn-num">3</button>
+                
+                <button id="btnEqual" onclick="calculate()" class="btn-equal">=</button>
+                
+                <button onclick="appendValue('0')" class="btn-num" style="grid-column: span 2;">0</button>
+                <button onclick="appendValue('.')" class="btn-num">.</button>
+            </div>
+        </div>
+        
+        <div class="message-back theme-funny" id="backCard">
+            <div class="avatar" id="backAvatar">✨</div>
+            <h2 id="backTitle">Halo!</h2>
+            <div class="message-content" id="backContent"></div>
+            <button onclick="flipBack()" class="btn-back">Kembali 🌸</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // --- Latar Belakang Emoji ---
+    const defaultEmojis = ['🌸', '✨', '🎀', '💖', '⚽', '🌷', '🍭', '🍓', '🧸', '☁️'];
+    function createBgEmojis() {
+        for(let i = 0; i < 15; i++) {
+            let el = document.createElement('div');
+            el.className = 'flying-bg-emoji';
+            el.innerText = defaultEmojis[Math.floor(Math.random() * defaultEmojis.length)];
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.animationDuration = (Math.random() * 4 + 6) + 's';
+            el.style.animationDelay = (Math.random() * 5) + 's';
+            document.body.appendChild(el);
+        }
+    }
+    createBgEmojis();
+
+    // --- DOM Elements ---
+    const bodyBg = document.getElementById('bodyBg');
+    const display = document.getElementById('display');
+    const cardInner = document.getElementById('cardInner');
+    const backAvatar = document.getElementById('backAvatar');
+    const backTitle = document.getElementById('backTitle');
+    const backContent = document.getElementById('backContent');
+    const audioGame = document.getElementById('audioGame');
+    const audioError = document.getElementById('audioError');
+
+    // --- LOGIKA BOLA & BONEKA (DRAG & BOUNCE) ---
+    function initBouncingObject(id, radius, speedMultiplier) {
+        const obj = document.getElementById(id);
+        if (!obj) return;
+        
+        let objX = parseFloat(obj.style.left) || 30; let objY = parseFloat(obj.style.top) || 30;
+        let objVx = 0; let objVy = 0;
+        let isDraggingObj = false; let lastMouseX = 0, lastMouseY = 0;
+
+        function startDragObj(e) {
+            if(e.type === 'touchstart') e.preventDefault();
+            isDraggingObj = true; objVx = 0; objVy = 0;
+            lastMouseX = e.touches ? e.touches[0].clientX : e.clientX;
+            lastMouseY = e.touches ? e.touches[0].clientY : e.clientY;
+        }
+
+        function dragObj(e) {
+            if (!isDraggingObj) return;
+            if(e.type === 'touchmove') e.preventDefault();
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            let dx = clientX - lastMouseX; let dy = clientY - lastMouseY;
+            objX += dx; objY += dy;
+            objVx = dx * speedMultiplier; objVy = dy * speedMultiplier;
+            lastMouseX = clientX; lastMouseY = clientY;
+            obj.style.left = objX + 'px'; obj.style.top = objY + 'px';
+        }
+
+        function endDragObj(e) { isDraggingObj = false; }
+
+        obj.addEventListener('mousedown', startDragObj);
+        obj.addEventListener('touchstart', startDragObj, {passive: false});
+        window.addEventListener('mousemove', dragObj);
+        window.addEventListener('touchmove', dragObj, {passive: false});
+        window.addEventListener('mouseup', endDragObj);
+        window.addEventListener('touchend', endDragObj);
+
+        function animateObj() {
+            if (!isDraggingObj) {
+                objVy += 0.6; // gravitasi
+                objX += objVx; objY += objVy;
+                objVx *= 0.99; objVy *= 0.99;
+
+                let maxX = window.innerWidth - radius * 2; let maxY = window.innerHeight - radius * 2;
+
+                if (objX <= 0) { objX = 0; objVx *= -0.7; }
+                if (objX >= maxX) { objX = maxX; objVx *= -0.7; }
+                if (objY <= 0) { objY = 0; objVy *= -0.7; }
+                if (objY >= maxY) { objY = maxY; objVy *= -0.75; objVx *= 0.95; }
+                if(objY >= maxY && Math.abs(objVy) < 1.5) objVy = 0;
+
+                obj.style.left = objX + 'px'; obj.style.top = objY + 'px';
+            }
+            requestAnimationFrame(animateObj);
+        }
+        animateObj();
+    }
+
+    initBouncingObject('bouncingBall', 20, 0.6);
+    initBouncingObject('bouncingDoll1', 20, 0.6);
+    initBouncingObject('bouncingDoll2', 20, 0.6);
+
+    // --- ANIMASI ANGKA TERBANG ---
+    function createFlyingText(e, text) {
+        const el = document.createElement('div');
+        el.className = 'flying-text'; el.innerText = text;
+        
+        let clientX = e.clientX; let clientY = e.clientY;
+        if(e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; } 
+        else if (!clientX && !clientY) {
+            const rect = e.target.getBoundingClientRect();
+            clientX = rect.left + rect.width / 2; clientY = rect.top + rect.height / 2;
+        }
+
+        el.style.left = clientX + 'px'; el.style.top = clientY + 'px';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 800);
+    }
+
+    document.querySelectorAll('.buttons button').forEach(btn => {
+        btn.addEventListener('click', function(e) { createFlyingText(e, this.innerText); });
+    });
+
+    // --- Kalkulator Logic ---
+    function appendValue(val) { display.value += val; }
+    function clearDisplay() { display.value = ''; }
+    function deleteLast() { display.value = display.value.slice(0, -1); }
+
+    function toggleDayNight() {
+        if (bodyBg.classList.contains('day-mode')) {
+            bodyBg.classList.replace('day-mode', 'night-mode');
+        } else {
+            bodyBg.classList.replace('night-mode', 'day-mode');
+        }
+    }
+
+    function calculate() {
+        const ekspresi = display.value.trim();
+        if (!ekspresi) return;
+
+        // --- KODE RAHASIA TAMPIL LINK LANGSUNG (27+27) ---
+        if (ekspresi === '27+27') {
+            display.value = 'KEJUTAN TERBUKA!';
+            
+            backAvatar.innerHTML = '💸✨';
+            backTitle.innerText = 'Kejutan!';
+            backContent.innerHTML = `
+                <p style="font-size: 14px; margin-top: 0;">Selamat! Kamu menemukan kode rahasia.</p>
+                <a href="https://link.dana.id/danakaget?c=sxh4necpx&r=cs37dA&orderId=20260624101214157715010300166600785227406" target="_blank" class="custom-btn-link">
+                    Ambil Hadiah DANA! 🎁
+                </a>
+            `;
+            showBackCard();
+            return;
+        }
+
+        // --- KODE RAHASIA: GAME TEBAK KARDUS (6666) ---
+        if (ekspresi === '6666') {
+            display.value = 'GAME DIMULAI!';
+            
+            // Putar audio game
+            audioGame.play().catch(e => console.log("Audio diblokir browser: " + e));
+
+            // Fungsi Toggle Musik
+            window.toggleMusic = () => {
+                const audio = document.getElementById('audioGame');
+                const btn = document.getElementById('btnToggleMusic');
+                if (audio.paused) {
+                    audio.play();
+                    btn.innerText = '🎵 Matikan Musik';
+                } else {
+                    audio.pause();
+                    btn.innerText = '🔇 Nyalakan Musik';
+                }
+            };
+
+            // Perubahan: Menambahkan pesan hadiah dan pembungkus untuk Start Screen dan Play Screen
+            const gameHtml = `
+                <div id="gameUI">
+                    <button id="btnToggleMusic" onclick="toggleMusic()" style="background: rgba(255,255,255,0.7); border: 1px solid #ccc; border-radius: 15px; padding: 6px 15px; cursor: pointer; margin-bottom: 15px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #334155;">🎵 Matikan Musik</button>
+                    <div id="gameStartScreen" style="text-align: center;">
+                        <p style="font-size:14px; margin-bottom: 20px;">Tebak di mana letak bintangnya! Selesaikan game dengan mencapai skor 3 berturut-turut, dan kamu akan <strong>mendapatkan hadiah spesial DANA Kaget!</strong> 💰✨</p>
+                        <button onclick="startGame()" style="background: linear-gradient(135deg, #4ade80, #22c55e); color: white; border: none; padding: 12px 25px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 10px rgba(74, 222, 128, 0.4); transition: transform 0.2s;">Mulai Game 🎮</button>
+                    </div>
+
+                    <div id="gamePlayScreen" style="display: none;">
+                        <div id="game23_info">Skor Beruntun: <span id="game23_score" style="font-size: 20px; font-weight: bold; color: #ff4d6d;">0</span> / 3</div>
+                        <div style="display:flex; justify-content:center; gap:15px; margin-top:20px;" id="game23_boxes">
+                            <button class="game-box-btn" onclick="guessBox(0)">📦</button>
+                            <button class="game-box-btn" onclick="guessBox(1)">📦</button>
+                            <button class="game-box-btn" onclick="guessBox(2)">📦</button>
+                        </div>
+                        <div id="game_notif" style="color: #e11d48; font-weight: bold; font-size: 13px; min-height: 20px; transition: opacity 0.3s; opacity: 0; margin-top: 15px;"></div>
+                    </div>
+                </div>
+            `;
+            
+            backAvatar.innerHTML = '🎮📦⭐';
+            backTitle.innerText = 'Tebak Bintang!';
+            backContent.innerHTML = gameHtml;
+            showBackCard();
+
+            window.game23Score = 0;
+
+            // Fungsi baru untuk memulai/mereset game dari Start Screen
+            window.startGame = () => {
+                window.game23Score = 0;
+                document.getElementById('gameStartScreen').style.display = 'none';
+                document.getElementById('gamePlayScreen').style.display = 'block';
+                document.getElementById('game23_score').innerText = '0';
+                document.getElementById('game_notif').style.opacity = 0;
+                
+                const boxes = document.querySelectorAll('#game23_boxes button');
+                boxes.forEach(b => { b.innerText = '📦'; b.disabled = false; });
+            };
+
+            window.guessBox = (idx) => {
+                const boxes = document.querySelectorAll('#game23_boxes button');
+                let targetIdx = Math.floor(Math.random() * 3);
+                
+                boxes.forEach((b, i) => { 
+                    b.innerText = (i === targetIdx) ? '⭐' : '❌';
+                    b.disabled = true;
+                });
+
+                if(idx === targetIdx) {
+                    window.game23Score++;
+                    document.getElementById('game23_score').innerText = window.game23Score;
+                    document.getElementById('game_notif').style.opacity = 0; 
+                    
+                    // CEK JIKA SKOR MENCAPAI 3
+                    if(window.game23Score >= 3) {
+                        setTimeout(() => {
+                            // Mengganti QRIS dengan Tombol Link DANA
+                            document.getElementById('gameUI').innerHTML = `
+                                <h3 style="color: #22c55e; margin-top: 0;">Selamat Kamu Menang! 🎉</h3>
+                                <p style="font-size: 14px;">Kamu hebat! Sesuai janji, silakan klaim hadiah DANA Kaget kamu di bawah ini:</p>
+                                <a href="https://link.dana.id/danakaget?c=sxh4necpx&r=cs37dA&orderId=20260624101214157715010300166600785227406" target="_blank" class="custom-btn-link">
+                                    Klaim Hadiah DANA! 💸
+                                </a>
+                            `;
+                        }, 600);
+                        return; 
+                    }
+
+                    // Reset box jika tebakan benar
+                    setTimeout(() => {
+                        boxes.forEach(b => { b.innerText = '📦'; b.disabled = false; });
+                    }, 1000);
+
+                } else {
+                    // Notifikasi gagal
+                    const notif = document.getElementById('game_notif');
+                    notif.innerText = 'Yah salah tebak! 😢';
+                    notif.style.opacity = 1;
+
+                    // Bunyikan suara error saat gagal
+                    if (audioError) {
+                        audioError.currentTime = 0; // Reset ke awal
+                        audioError.play().catch(e => console.log("Audio diblokir: " + e));
+                    }
+
+                    window.game23Score = 0;
+                    document.getElementById('game23_score').innerText = '0';
+
+                    // Jeda sejenak agar pemain melihat tebakannya salah, lalu munculkan kembali tombol mulai
+                    setTimeout(() => {
+                        document.getElementById('gamePlayScreen').style.display = 'none';
+                        const startScreen = document.getElementById('gameStartScreen');
+                        startScreen.style.display = 'block';
+                        startScreen.innerHTML = `
+                            <p style="font-size:14px; color: #e11d48; font-weight: bold; margin-bottom: 5px;">Yahhh Game Over! 😭</p>
+                            <p style="font-size:12px; margin-bottom: 20px;">Skormu keriset. Jangan nyerah, ayo coba lagi buat dapat hadiahnya!</p>
+                            <button onclick="startGame()" style="background: linear-gradient(135deg, #f87171, #ef4444); color: white; border: none; padding: 12px 25px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4); transition: transform 0.2s;">Mulai Ulang 🔄</button>
+                        `;
+                    }, 1200); 
+                }
+            };
+            return;
+        }
+
+        // --- Kalkulasi Matematika Biasa ---
+        try {
+            const result = new Function('return ' + ekspresi.replace(/[^-()\d/*+.]/g, ''))();
+            display.value = result;
+        } catch (error) { 
+            display.value = 'Error'; 
+        }
+    }
+
+    function showBackCard() {
+        setTimeout(() => cardInner.classList.add('flipped'), 300);
+    }
+
+    function flipBack() {
+        cardInner.classList.remove('flipped');
+        
+        // Hentikan dan reset semua musik/sound saat kembali ke kalkulator
+        audioGame.pause();
+        audioGame.currentTime = 0;
+        
+        if(audioError) {
+            audioError.pause();
+            audioError.currentTime = 0;
+        }
+        
+        clearDisplay();
+        setTimeout(() => { backContent.innerHTML = ''; }, 500);
+    }
+</script>
+
+</body>
+</html>
